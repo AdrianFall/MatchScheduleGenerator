@@ -1,8 +1,10 @@
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class ScheduleGenerator {
 
@@ -73,77 +75,61 @@ public class ScheduleGenerator {
 		String pivot = obtainedTeamList.get(0);
 		obtainedTeamList.remove(0);
 		boolean pivotPlayingHome = false;
-		for (int i = 0; i < (teamList.size()-1); i++ ) {
-			
-			
+		for (int i = 0; i < (teamList.size() - 1); i++) {
 
-			// Obtain to obtain the current teamNameMap
-	/*		try {
-				teamNameMap = mappedMatches.get("day" + (i + 1));
-				if (teamNameMap == null)
-					teamNameMap = new HashMap<String, Map<String, String>>();
+			if (((i + 1) % 2) == 1)
+				pivotPlayingHome = true;
+			else
+				pivotPlayingHome = false;
 
-			} catch (Exception e) {
-				// keep the teamNameMap empty.
-				teamNameMap = new HashMap<String, Map<String, String>>();
-			}
-			// Attempt to obtain the current match record map
-			try {
-				matchRecordMap = mappedMatches.get("day" + (i + 1)).get(
-						teamName);
-				if (matchRecordMap == null)
-					matchRecordMap = new HashMap<String, String>();
-
-			} catch (Exception e) {
-				// keep the matchRecordMap empty.
-				matchRecordMap = new HashMap<String, String>();
-			}*/
-			
-			
-			if (((i+1) % 2) == 1) pivotPlayingHome = true;
-			else pivotPlayingHome = false;
-			
-			
 			for (int j = 0; j < (teamList.size() / 2); j++) {
 				Map<String, Map<String, String>> teamNameMap = new HashMap<String, Map<String, String>>();
 				Map<String, String> matchRecordMap = new HashMap<String, String>();
+				Map<String, String> secondSeasonMatchRecordMap = new HashMap<String, String>();
 				String home = null;
 				String away = null;
-				if ((((j+1) % 2) == 1) && pivotPlayingHome) {
+				if ((((j + 1) % 2) == 1) && pivotPlayingHome) {
 					// Home
 					if (j == 0) {
-						System.out.println("j == 0");
 						home = pivot;
-						away = obtainedTeamList.get(obtainedTeamList.size()-1); 
+						away = obtainedTeamList
+								.get(obtainedTeamList.size() - 1);
 					} else { // Stage 2 of algorithm
-						home = obtainedTeamList.get(j-1);
-						away = obtainedTeamList.get((obtainedTeamList.size()-1)-j);
+						home = obtainedTeamList.get(j - 1);
+						away = obtainedTeamList
+								.get((obtainedTeamList.size() - 1) - j);
 					}
-					
-				} else if ((((j+1) % 2) == 0) && pivotPlayingHome) {
+
+				} else if ((((j + 1) % 2) == 0) && pivotPlayingHome) {
 					// Away
 					// Stage 2
-						home = obtainedTeamList.get((obtainedTeamList.size()-1)-j);
-						away = obtainedTeamList.get(j-1);
-					
-				} else if ((((j+1) % 2) == 0) && !pivotPlayingHome) {
+					home = obtainedTeamList.get((obtainedTeamList.size() - 1)
+							- j);
+					away = obtainedTeamList.get(j - 1);
+
+				} else if ((((j + 1) % 2) == 0) && !pivotPlayingHome) {
 					// Stage 2
-					home = obtainedTeamList.get(j-1);
-					away = obtainedTeamList.get((obtainedTeamList.size()-1)-j);
-					
-				} else if ((((j+1) % 2) == 1) && !pivotPlayingHome) {
+					home = obtainedTeamList.get(j - 1);
+					away = obtainedTeamList.get((obtainedTeamList.size() - 1)
+							- j);
+
+				} else if ((((j + 1) % 2) == 1) && !pivotPlayingHome) {
 					if (j == 0) {
-						home = obtainedTeamList.get(obtainedTeamList.size()-1);
+						home = obtainedTeamList
+								.get(obtainedTeamList.size() - 1);
 						away = pivot;
 					} else { // Stage 2
-						home = obtainedTeamList.get((obtainedTeamList.size()-1)-j);
-						away = obtainedTeamList.get(j-1);
+						home = obtainedTeamList
+								.get((obtainedTeamList.size() - 1) - j);
+						away = obtainedTeamList.get(j - 1);
 					}
 				}
-				if (home == null || away == null) System.err.println("SHIT");
 				matchRecordMap.put("home", home);
 				matchRecordMap.put("away", away);
-				
+
+				secondSeasonMatchRecordMap.put("home", away);
+				secondSeasonMatchRecordMap.put("away", home);
+
 				// Obtain to obtain the current teamNameMap
 				try {
 					teamNameMap = mappedMatches.get("day" + (i + 1));
@@ -154,27 +140,88 @@ public class ScheduleGenerator {
 					// keep the teamNameMap empty.
 					teamNameMap = new HashMap<String, Map<String, String>>();
 				}
-				
+
 				teamNameMap.put(home, matchRecordMap);
 				teamNameMap.put(away, matchRecordMap);
-				
-				
-				
-				mappedMatches.put("day" + (i+1), teamNameMap);
-				
-				
-				
+
+				mappedMatches.put("day" + (i + 1), teamNameMap);
+
+				// Obtain to obtain the current teamNameMap
+				try {
+					teamNameMap = mappedMatches.get("day" + (i + 12));
+					if (teamNameMap == null)
+						teamNameMap = new HashMap<String, Map<String, String>>();
+
+				} catch (Exception e) {
+					// keep the teamNameMap empty.
+					teamNameMap = new HashMap<String, Map<String, String>>();
+				}
+				teamNameMap.put(home, secondSeasonMatchRecordMap);
+				teamNameMap.put(away, secondSeasonMatchRecordMap);
+				mappedMatches.put("day" + (i + 12), teamNameMap);
+
 			} // End looping for half of team size
-			
+
 			// Rotate the obtainedTeamList
 			Collections.rotate(obtainedTeamList, 1);
-			
+
 		} // END for loop (teamList.size)
-	/*	System.out.println(mappedMatches);*/
-		 for (int i = 0; i < 11; i++) { System.out.println(pivot + " " + (i+1)
-				 + mappedMatches.get("day"+(i+1)).get(pivot)); }
+		/* System.out.println(mappedMatches); */
+
+		printMatches(mappedMatches, teamList);
+		for (int i = 0; i < 22; i++) {
+			System.out.println(pivot + " " + (i + 1)
+					+ mappedMatches.get("day" + (i + 1)).get(pivot));
+		}
 		return null;
 	}
+
+	private static void printMatches(
+			Map<String, Map<String, Map<String, String>>> mappedMatches,
+			ArrayList<String> teamList) {
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(
+					"C:/Users/Adrian/Desktop/schedule.txt", "UTF-8");
+			// Print 22 days
+			for (int i = 0; i < 22; i++) {
+				
+				writer.println("*************DAY" + (i + 1) + " ************");
+				ArrayList<String> repetitionCheckList = new ArrayList<String>(); 
+				for (int j = 0; j < 12; j++) {
+					
+					String home = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("home");
+					String away = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("away");
+					if (repetitionCheckList.contains(home)) {
+						repetitionCheckList.add(home);
+					} else if (repetitionCheckList.contains(away)) {
+						repetitionCheckList.add(away);
+					} else {
+						writer.println(home + " VS " + away);
+					}
+					
+					
+					/*System.out.println(pivot + " " + (i + 1)
+							+ mappedMatches.get("day" + (i + 1)).get(pivot));*/
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			writer.close();
+		}
+
+		
+
+
+		
+		
+		
+		
+	}
+
 }
-		
-		
