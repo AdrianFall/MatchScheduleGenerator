@@ -74,6 +74,7 @@ public class ScheduleGenerator {
 		// Generation with round-robin tournament algorithm
 		String pivot = obtainedTeamList.get(0);
 		obtainedTeamList.remove(0);
+		System.out.println(obtainedTeamList);
 		boolean pivotPlayingHome = false;
 		for (int i = 0; i < (teamList.size() - 1); i++) {
 
@@ -88,7 +89,7 @@ public class ScheduleGenerator {
 				Map<String, String> secondSeasonMatchRecordMap = new HashMap<String, String>();
 				String home = null;
 				String away = null;
-				if ((((j + 1) % 2) == 1) && pivotPlayingHome) {
+				if (pivotPlayingHome) {
 					// Home
 					if (j == 0) {
 						home = pivot;
@@ -100,20 +101,8 @@ public class ScheduleGenerator {
 								.get((obtainedTeamList.size() - 1) - j);
 					}
 
-				} else if ((((j + 1) % 2) == 0) && pivotPlayingHome) {
-					// Away
-					// Stage 2
-					home = obtainedTeamList.get((obtainedTeamList.size() - 1)
-							- j);
-					away = obtainedTeamList.get(j - 1);
-
-				} else if ((((j + 1) % 2) == 0) && !pivotPlayingHome) {
-					// Stage 2
-					home = obtainedTeamList.get(j - 1);
-					away = obtainedTeamList.get((obtainedTeamList.size() - 1)
-							- j);
-
-				} else if ((((j + 1) % 2) == 1) && !pivotPlayingHome) {
+			
+				} else if (!pivotPlayingHome) {
 					if (j == 0) {
 						home = obtainedTeamList
 								.get(obtainedTeamList.size() - 1);
@@ -164,6 +153,7 @@ public class ScheduleGenerator {
 
 			// Rotate the obtainedTeamList
 			Collections.rotate(obtainedTeamList, 1);
+			System.out.println(obtainedTeamList);
 
 		} // END for loop (teamList.size)
 		/* System.out.println(mappedMatches); */
@@ -198,6 +188,8 @@ public class ScheduleGenerator {
 						repetitionCheckList.add(away);
 					} else {
 						writer.println(home + " VS " + away);
+						repetitionCheckList.add(home);
+						repetitionCheckList.add(away);
 					}
 					
 					
