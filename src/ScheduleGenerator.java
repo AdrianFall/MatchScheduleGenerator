@@ -36,15 +36,96 @@ public class ScheduleGenerator {
 		
 		printMatches(allMatchesCombinationList, teamList);
 
+		test(allMatchesCombinationList, teamList);
 
 	}
 
+	private static void test(Map<String, Map<String, Map<String, String>>> allMatchesCombinationList, ArrayList<String> teamList) {
+		// Loop through all the teams
+		System.err.println("TEAM LIST SIZE = " + teamList.size());
+		for (int i = 0; i < teamList.size(); i++) {
+			String currentTeamName = teamList.get(i);
+			String lastPlayedMatchVenue = "none";
+			int amountOfHomeMatches = 0;
+			int amountOfAwayMatches = 0;
+			int amountOfMatchesInARowAtTheSameVenue = 0;
+			int highestAmountOfMatchesInARowAtTheSameVenue = 0;
+			System.err.println("Current team name - " + currentTeamName);
+			// Loop through all the matches in a day
+			//for (int j = 0; j < numberOfDaysNeededToPlayAllMatches; j++) {
+			for (int j = 0; j < numberOfDaysNeededToPlayAllMatches; j++) {
+				String home = allMatchesCombinationList.get("day" + (j+1)).get(currentTeamName).get("home");
+				String away = allMatchesCombinationList.get("day" + (j+1)).get(currentTeamName).get("away");
+				if (home.equals(currentTeamName)) {
+					amountOfHomeMatches++;
+					if (lastPlayedMatchVenue.equals("none")) lastPlayedMatchVenue = "home";
+					
+					if (lastPlayedMatchVenue.equals("away")) amountOfMatchesInARowAtTheSameVenue = 0;
+			
+					else if (lastPlayedMatchVenue.equals("home")) {
+						amountOfMatchesInARowAtTheSameVenue++;
+						if (amountOfMatchesInARowAtTheSameVenue > highestAmountOfMatchesInARowAtTheSameVenue) {
+							highestAmountOfMatchesInARowAtTheSameVenue = new Integer(amountOfMatchesInARowAtTheSameVenue);
+						}
+					}
+					lastPlayedMatchVenue = "home";
+				} else if (away.equals(currentTeamName)) {
+					amountOfAwayMatches++;
+					if (lastPlayedMatchVenue.equals("none")) lastPlayedMatchVenue = "away";
+				
+					if (lastPlayedMatchVenue.equals("away")) {
+						amountOfMatchesInARowAtTheSameVenue++;
+						if (amountOfMatchesInARowAtTheSameVenue > highestAmountOfMatchesInARowAtTheSameVenue) {
+							highestAmountOfMatchesInARowAtTheSameVenue = new Integer(amountOfMatchesInARowAtTheSameVenue);
+						}
+					} else if (lastPlayedMatchVenue.equals("home")) amountOfMatchesInARowAtTheSameVenue = 0;
+					
+					lastPlayedMatchVenue = "away";
+				}
+				
+			} // END looping through all the matches in a day
+			System.err.println(currentTeamName + " number of home matches = " + amountOfHomeMatches + " .. away matches = " + amountOfAwayMatches);
+			System.err.println("Highest number of games played in the same venue in a row is " + highestAmountOfMatchesInARowAtTheSameVenue);
+		} // END looping through the team size
+	}
+	
+	private static void printMatches(
+			Map<String, Map<String, Map<String, String>>> mappedMatches,
+			ArrayList<String> teamList) {
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(
+					"C:/Users/Adrian/Desktop/schedule.txt", "UTF-8");
+			// Print all days in the season
+			for (int i = 0; i < numberOfDaysNeededToPlayAllMatches; i++) {
+				
+				writer.println("*************DAY" + (i + 1) + " ************");
+				ArrayList<String> repetitionCheckList = new ArrayList<String>(); 
+				for (int j = 0; j < teamList.size(); j++) {
+					String home = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("home");
+					String away = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("away");
+					if (!repetitionCheckList.contains(home) && !repetitionCheckList.contains(away)) {
+						writer.println(home + " VS " + away);
+						repetitionCheckList.add(home);
+						repetitionCheckList.add(away);
+					}
+				}
+			} // END printing all days in the season
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			writer.close();
+		}
+	} // END method printMatches
 
 	private static Map<String, Map<String, Map<String, String>>> generateAllMatchesCombinationList(
 			ArrayList<String> teamList) {
 		
-		ArrayList<Map<String, String>> allMatchesCombinationList = new ArrayList<Map<String, String>>();
-		ArrayList<String> allMatches = new ArrayList<String>();
+	
 		//FIXME Shuffle the team list (REMEMBER TO DELETE IN REAL PROJECT)
 		Collections.shuffle(teamList);
 
@@ -175,38 +256,6 @@ public class ScheduleGenerator {
 	 * @param teamList - array list with the team names
 	 */
 	
-	private static void printMatches(
-			Map<String, Map<String, Map<String, String>>> mappedMatches,
-			ArrayList<String> teamList) {
-		PrintWriter writer = null;
-		try {
-			writer = new PrintWriter(
-					"C:/Users/Adrian/Desktop/schedule.txt", "UTF-8");
-			// Print all days in the season
-			for (int i = 0; i < numberOfDaysNeededToPlayAllMatches; i++) {
-				
-				writer.println("*************DAY" + (i + 1) + " ************");
-				ArrayList<String> repetitionCheckList = new ArrayList<String>(); 
-				for (int j = 0; j < teamList.size(); j++) {
-					
-					String home = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("home");
-					String away = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("away");
-					if (!repetitionCheckList.contains(home) && !repetitionCheckList.contains(away)) {
-						writer.println(home + " VS " + away);
-						repetitionCheckList.add(home);
-						repetitionCheckList.add(away);
-					}
-				}
-			} // END printing all days in the season
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			writer.close();
-		}
-	} // END method printMatches
+	
 
 }
