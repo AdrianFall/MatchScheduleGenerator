@@ -9,7 +9,6 @@ import java.util.Map;
 public class ScheduleGenerator {
 
 	private static int numberOfDaysNeededToPlayAllMatches;
-	private static ArrayList<Integer> randomlyChosenTeamNamesList;
 	public static final String MAP_OPPONENT_ONE = "opponent_one";
 	public static final String MAP_OPPONENT_TWO = "opponent_TWO";
 
@@ -32,30 +31,31 @@ public class ScheduleGenerator {
 		numberOfDaysNeededToPlayAllMatches = (teamList.size() - 1) * 2;
 		/* System.out.println(numberOfDaysNeededToPlayAllMatches); */
 
-		ArrayList<Map<String, String>> allMatchesCombinationList = generateAllMatchesCombinationList(teamList);
+		Map<String, Map<String, Map<String, String>>> allMatchesCombinationList = generateAllMatchesCombinationList(teamList);
 		/* System.out.println(allMatchesCombinationList); */
+		
+		printMatches(allMatchesCombinationList, teamList);
 
-		generateSchedule(allMatchesCombinationList);
-
-	}
-
-	private static void generateSchedule(
-			ArrayList<Map<String, String>> allMatchesCombinationList) {
 
 	}
 
-	private static ArrayList<Map<String, String>> generateAllMatchesCombinationList(
+
+	private static Map<String, Map<String, Map<String, String>>> generateAllMatchesCombinationList(
 			ArrayList<String> teamList) {
+		
 		ArrayList<Map<String, String>> allMatchesCombinationList = new ArrayList<Map<String, String>>();
 		ArrayList<String> allMatches = new ArrayList<String>();
-		// Shuffle the team list
+		//FIXME Shuffle the team list (REMEMBER TO DELETE IN REAL PROJECT)
 		Collections.shuffle(teamList);
 
 		Map<String, Map<String, Map<String, String>>> mappedMatches = new HashMap<String, Map<String, Map<String, String>>>();
 
 		// Generations Rules
-		// A team plays one day HOME and the next AWAY
-		// A team must face the same opponent at HOME and AWAY
+		// A pivot team (i.e. the first grabbed team by algorithm) must play 
+		// one day home and the next away, for all the season.
+		// Every team must face the same opponent at home and away.
+		// Every team must have equal amount of home and away matches during the season.
+		// Any team should not be playing more than three matches at home or away in a row. 
 
 		// When does a team face the same opponent, time-wise?
 		// The algorithm used attempts to provide the best distribution of the
@@ -65,13 +65,14 @@ public class ScheduleGenerator {
 		// the first day of the season against a team B, then the algorithm will
 		// schedule a match between team B and team A
 		// (notice team A is playing AWAY this time) on the 12th day of the
-		// league. By saying team C is playing against
+		// season. By saying team C is playing against
 		// team V on 19th day of season, we should be able to infer that team V
 		// has played team C on the 8th day of season.
 
 		ArrayList<String> obtainedTeamList = new ArrayList<String>(teamList);
 
 		// Generation with round-robin tournament algorithm
+		// Obtain the pivot and remove it from the obtainedTeamList
 		String pivot = obtainedTeamList.get(0);
 		obtainedTeamList.remove(0);
 		System.out.println(obtainedTeamList);
@@ -135,9 +136,9 @@ public class ScheduleGenerator {
 
 				mappedMatches.put("day" + (i + 1), teamNameMap);
 
-				// Obtain to obtain the current teamNameMap
+				// Check if there exists a mapped day (in the 2nd half of season)  
 				try {
-					teamNameMap = mappedMatches.get("day" + (i + 12));
+					teamNameMap = mappedMatches.get("day" + (i + teamList.size()));
 					if (teamNameMap == null)
 						teamNameMap = new HashMap<String, Map<String, String>>();
 
@@ -145,27 +146,35 @@ public class ScheduleGenerator {
 					// keep the teamNameMap empty.
 					teamNameMap = new HashMap<String, Map<String, String>>();
 				}
+				// Allocate the match 
 				teamNameMap.put(home, secondSeasonMatchRecordMap);
 				teamNameMap.put(away, secondSeasonMatchRecordMap);
-				mappedMatches.put("day" + (i + 12), teamNameMap);
+				mappedMatches.put("day" + (i + teamList.size()), teamNameMap);
 
 			} // End looping for half of team size
 
-			// Rotate the obtainedTeamList
+			// Rotate the obtainedTeamList (part of the round-robin tournament scheduling algorithm, i.e. )
 			Collections.rotate(obtainedTeamList, 1);
 			System.out.println(obtainedTeamList);
 
 		} // END for loop (teamList.size)
 		/* System.out.println(mappedMatches); */
 
-		printMatches(mappedMatches, teamList);
-		for (int i = 0; i < 22; i++) {
+		// Print to console all pivot's mapped matches
+		for (int i = 0; i < numberOfDaysNeededToPlayAllMatches; i++) {
 			System.out.println(pivot + " " + (i + 1)
 					+ mappedMatches.get("day" + (i + 1)).get(pivot));
+		
 		}
-		return null;
+		return mappedMatches;
 	}
 
+	/**
+	 * Prints the matches to a text file
+	 * @param mappedMatches - the generated map of matches by the algorithm
+	 * @param teamList - array list with the team names
+	 */
+	
 	private static void printMatches(
 			Map<String, Map<String, Map<String, String>>> mappedMatches,
 			ArrayList<String> teamList) {
@@ -173,30 +182,22 @@ public class ScheduleGenerator {
 		try {
 			writer = new PrintWriter(
 					"C:/Users/Adrian/Desktop/schedule.txt", "UTF-8");
-			// Print 22 days
-			for (int i = 0; i < 22; i++) {
+			// Print all days in the season
+			for (int i = 0; i < numberOfDaysNeededToPlayAllMatches; i++) {
 				
 				writer.println("*************DAY" + (i + 1) + " ************");
 				ArrayList<String> repetitionCheckList = new ArrayList<String>(); 
-				for (int j = 0; j < 12; j++) {
+				for (int j = 0; j < teamList.size(); j++) {
 					
 					String home = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("home");
 					String away = mappedMatches.get("day" + (i+1)).get(teamList.get(j)).get("away");
-					if (repetitionCheckList.contains(home)) {
-						repetitionCheckList.add(home);
-					} else if (repetitionCheckList.contains(away)) {
-						repetitionCheckList.add(away);
-					} else {
+					if (!repetitionCheckList.contains(home) && !repetitionCheckList.contains(away)) {
 						writer.println(home + " VS " + away);
 						repetitionCheckList.add(home);
 						repetitionCheckList.add(away);
 					}
-					
-					
-					/*System.out.println(pivot + " " + (i + 1)
-							+ mappedMatches.get("day" + (i + 1)).get(pivot));*/
 				}
-			}
+			} // END printing all days in the season
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -206,14 +207,6 @@ public class ScheduleGenerator {
 		} finally {
 			writer.close();
 		}
-
-		
-
-
-		
-		
-		
-		
-	}
+	} // END method printMatches
 
 }
