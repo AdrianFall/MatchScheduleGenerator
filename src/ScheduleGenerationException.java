@@ -1,7 +1,7 @@
 
 public class ScheduleGenerationException extends Exception {
 	public ScheduleGenerationException() {
-        this("InsufficientAmountOfMatchesException");
+        this("ScheduleGenerationException");
     }
 
 	public ScheduleGenerationException(String msg) {
