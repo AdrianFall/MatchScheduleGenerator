@@ -9,8 +9,6 @@ import java.util.Map;
 public class ScheduleGenerator {
 
 	private static int numberOfDaysNeededToPlayAllMatches;
-	public static final String MAP_OPPONENT_ONE = "opponent_one";
-	public static final String MAP_OPPONENT_TWO = "opponent_TWO";
 
 	public static void main(String[] args) {
 		ArrayList<String> teamList = new ArrayList<String>();
@@ -31,18 +29,19 @@ public class ScheduleGenerator {
 		numberOfDaysNeededToPlayAllMatches = (teamList.size() - 1) * 2;
 		/* System.out.println(numberOfDaysNeededToPlayAllMatches); */
 
-		Map<String, Map<String, Map<String, String>>> allMatchesCombinationList = generateAllMatchesCombinationList(teamList);
+		Map<String, Map<String, Map<String, String>>> allMatchesCombinationList;
+		try {
+			allMatchesCombinationList = generateAllMatchesCombinationList(teamList);
+			printMatches(allMatchesCombinationList, teamList);
+			test(allMatchesCombinationList, teamList);
+		} catch (ScheduleGenerationException sge) {
+			sge.printStackTrace();
+		}
 		/* System.out.println(allMatchesCombinationList); */
-		
-		printMatches(allMatchesCombinationList, teamList);
-
-		test(allMatchesCombinationList, teamList);
-
 	}
 
-	private static void test(Map<String, Map<String, Map<String, String>>> allMatchesCombinationList, ArrayList<String> teamList) {
+	private static void test(Map<String, Map<String, Map<String, String>>> allMatchesCombinationList, ArrayList<String> teamList) throws ScheduleGenerationException {
 		// Loop through all the teams
-		System.err.println("TEAM LIST SIZE = " + teamList.size());
 		for (int i = 0; i < teamList.size(); i++) {
 			String currentTeamName = teamList.get(i);
 			String lastPlayedMatchVenue = "none";
@@ -50,12 +49,44 @@ public class ScheduleGenerator {
 			int amountOfAwayMatches = 0;
 			int amountOfMatchesInARowAtTheSameVenue = 0;
 			int highestAmountOfMatchesInARowAtTheSameVenue = 0;
-			System.err.println("Current team name - " + currentTeamName);
+			System.out.println("               " + currentTeamName);
 			// Loop through all the matches in a day
-			//for (int j = 0; j < numberOfDaysNeededToPlayAllMatches; j++) {
 			for (int j = 0; j < numberOfDaysNeededToPlayAllMatches; j++) {
+				
+				
 				String home = allMatchesCombinationList.get("day" + (j+1)).get(currentTeamName).get("home");
 				String away = allMatchesCombinationList.get("day" + (j+1)).get(currentTeamName).get("away");
+				
+				// For the first half of the season, make a check
+				// whether the above obtained teams (home & away)
+				// are playing each other in half a season time
+				// (this time at the different venue)
+				if (j < (numberOfDaysNeededToPlayAllMatches/2)) {
+					String halfASeasonTimeHome = allMatchesCombinationList.get("day" + ((j+1) + (numberOfDaysNeededToPlayAllMatches/2))).get(currentTeamName).get("home");
+					String halfASeasonTimeAway = allMatchesCombinationList.get("day" + ((j+1) + (numberOfDaysNeededToPlayAllMatches/2))).get(currentTeamName).get("away");
+					
+					if (home != halfASeasonTimeAway || away != halfASeasonTimeHome) 
+							throw new ScheduleGenerationException("The team " 
+																  + home 												
+																  + " facing "										
+																  + away 										
+																  + " on day " 										
+																  + (j+1) 											
+																  + " is not facing the same opponent in half a season time (i.e. on day " 												 
+																  + (j+numberOfDaysNeededToPlayAllMatches/2) 
+																  + "), since " 
+																  + halfASeasonTimeAway 
+																  + " is playing away facing " 
+																  + halfASeasonTimeHome 
+																  + " and " 
+																  + allMatchesCombinationList.get("day" + ((j+1) + (numberOfDaysNeededToPlayAllMatches/2))).get(away).get("home") 
+																  + " is playing home facing " 
+																  + allMatchesCombinationList.get("day" + ((j+1) + (numberOfDaysNeededToPlayAllMatches/2))).get(away).get("away"));
+				}
+				
+				// Calculate the number of games played home & away 
+				// + counter for highest amount of matches player in a row
+				// at the same venue
 				if (home.equals(currentTeamName)) {
 					amountOfHomeMatches++;
 					if (lastPlayedMatchVenue.equals("none")) lastPlayedMatchVenue = "home";
@@ -84,11 +115,32 @@ public class ScheduleGenerator {
 				}
 				
 			} // END looping through all the matches in a day
-			System.err.println(currentTeamName + " number of home matches = " + amountOfHomeMatches + " .. away matches = " + amountOfAwayMatches);
-			System.err.println("Highest number of games played in the same venue in a row is " + highestAmountOfMatchesInARowAtTheSameVenue);
-		} // END looping through the team size
+			
+			// Determine whether the current team has equal amount of home and away matches in a season.
+			if (amountOfHomeMatches != amountOfAwayMatches) throw new ScheduleGenerationException("The team " + currentTeamName + " has insufficient amount of games, since the home (" + amountOfHomeMatches + ") is not equal to away (" + amountOfAwayMatches + ") amount of matches.");
+			
+			// Determine whether the current team has as many matches as the number of days in a season.
+			if ((amountOfHomeMatches+amountOfAwayMatches) != numberOfDaysNeededToPlayAllMatches) throw new ScheduleGenerationException("The team " + currentTeamName + " has insufficient amount of games (" + (amountOfHomeMatches + amountOfAwayMatches) + ") comparing to days needed to play all matches (" + numberOfDaysNeededToPlayAllMatches + ").");
+			
+			// Determine whether the team has three or more matches in a row at the same venue.
+			if(amountOfMatchesInARowAtTheSameVenue >= 3) throw new ScheduleGenerationException("The team has " + amountOfMatchesInARowAtTheSameVenue + " matches in a row at the same venue.");
+			
+			
+			
+			System.out.println(currentTeamName + " number of home matches = " + amountOfHomeMatches + " .. away matches = " + amountOfAwayMatches);
+			System.out.println("Highest number of games played in the same venue in a row is " + highestAmountOfMatchesInARowAtTheSameVenue);
+
+			System.out.println();
+			
+		} // END looping through the teams
 	}
 	
+
+	/**
+	 * Prints the matches to a text file
+	 * @param mappedMatches - the generated map of matches by the algorithm
+	 * @param teamList - array list with the team names
+	 */
 	private static void printMatches(
 			Map<String, Map<String, Map<String, String>>> mappedMatches,
 			ArrayList<String> teamList) {
@@ -123,8 +175,9 @@ public class ScheduleGenerator {
 	} // END method printMatches
 
 	private static Map<String, Map<String, Map<String, String>>> generateAllMatchesCombinationList(
-			ArrayList<String> teamList) {
+			ArrayList<String> teamList) throws ScheduleGenerationException {
 		
+		if (teamList.size() % 2 != 0) throw new ScheduleGenerationException("The generation couldn't be processed since the team list size was not an even number. The team list size = " + teamList.size());
 	
 		//FIXME Shuffle the team list (REMEMBER TO DELETE IN REAL PROJECT)
 		Collections.shuffle(teamList);
@@ -136,7 +189,7 @@ public class ScheduleGenerator {
 		// one day home and the next away, for all the season.
 		// Every team must face the same opponent at home and away.
 		// Every team must have equal amount of home and away matches during the season.
-		// Any team should not be playing more than three matches at home or away in a row. 
+		// Any team should not be playing three or more matches at home or away in a row. 
 
 		// When does a team face the same opponent, time-wise?
 		// The algorithm used attempts to provide the best distribution of the
@@ -156,7 +209,7 @@ public class ScheduleGenerator {
 		// Obtain the pivot and remove it from the obtainedTeamList
 		String pivot = obtainedTeamList.get(0);
 		obtainedTeamList.remove(0);
-		System.out.println(obtainedTeamList);
+		/*System.out.println(obtainedTeamList);*/
 		boolean pivotPlayingHome = false;
 		for (int i = 0; i < (teamList.size() - 1); i++) {
 
@@ -236,26 +289,8 @@ public class ScheduleGenerator {
 
 			// Rotate the obtainedTeamList (part of the round-robin tournament scheduling algorithm, i.e. )
 			Collections.rotate(obtainedTeamList, 1);
-			System.out.println(obtainedTeamList);
 
 		} // END for loop (teamList.size)
-		/* System.out.println(mappedMatches); */
-
-		// Print to console all pivot's mapped matches
-		for (int i = 0; i < numberOfDaysNeededToPlayAllMatches; i++) {
-			System.out.println(pivot + " " + (i + 1)
-					+ mappedMatches.get("day" + (i + 1)).get(pivot));
-		
-		}
 		return mappedMatches;
 	}
-
-	/**
-	 * Prints the matches to a text file
-	 * @param mappedMatches - the generated map of matches by the algorithm
-	 * @param teamList - array list with the team names
-	 */
-	
-	
-
 }
